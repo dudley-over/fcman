@@ -43,6 +43,13 @@
             margin: 0;
             height: auto;
         }
+        #scoreDisplay {
+            color: #fff;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            margin-top: 10px; /* Space between canvas and score */
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -52,11 +59,13 @@
             Use arrow keys to move Fibre Channel Man. Collect Data Packets (10 pts), Zoning Configs (50 pts), and Brocade Turbo Ports (power-up). Avoid Latency Ghosts unless turbo is active—then chase them for 200 pts each!
         </div>
         <canvas id="gameCanvas" width="480" height="360"></canvas>
+        <div id="scoreDisplay">Score: 0</div> <!-- New score element -->
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
 
         // Sound effects
         const wakaSound = new Audio('http://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3');
@@ -141,16 +150,14 @@
             const size = gridSize - 2;
             const color = ghost.vulnerable ? '#00f' : '#f00';
 
-            // Ghost body
             ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(x + size / 2, y + size / 4, size / 2, Math.PI, 0, false); // Top semi-circle
-            ctx.lineTo(x + size, y + size); // Right side down
-            ctx.lineTo(x, y + size); // Left side down
+            ctx.arc(x + size / 2, y + size / 4, size / 2, Math.PI, 0, false);
+            ctx.lineTo(x + size, y + size);
+            ctx.lineTo(x, y + size);
             ctx.closePath();
             ctx.fill();
 
-            // Wavy bottom
             ctx.beginPath();
             ctx.moveTo(x, y + size);
             for (let i = 0; i < 4; i++) {
@@ -165,7 +172,6 @@
             ctx.closePath();
             ctx.fill();
 
-            // Eyes
             const eyeOffsetX = size / 4;
             const eyeOffsetY = size / 4;
             const eyeSize = size / 6;
@@ -185,6 +191,11 @@
             ctx.beginPath();
             ctx.arc(x + size / 2 + eyeOffsetX, y + eyeOffsetY, eyeSize / 2, 0, Math.PI * 2);
             ctx.fill();
+        }
+
+        // Update score display
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
         }
 
         // Game loop
@@ -209,10 +220,12 @@
                         map[newY][newX] = 0;
                         score += 10;
                         playSoundForDuration(wakaSound, 1000);
+                        updateScore();
                     } else if (map[newY][newX] === 3) {
                         map[newY][newX] = 0;
                         score += 50;
                         playSoundForDuration(wakaSound, 1000);
+                        updateScore();
                     } else if (map[newY][newX] === 4) {
                         map[newY][newX] = 0;
                         fibreMan.turbo = true;
@@ -279,6 +292,7 @@
                             score += 200;
                             ghostEatenSound.currentTime = 0;
                             ghostEatenSound.play().catch(e => console.log("Audio play failed:", e));
+                            updateScore();
                         } else {
                             gameOverSound.currentTime = 0;
                             gameOverSound.play().catch(e => console.log("Audio play failed:", e));
@@ -323,7 +337,7 @@
                     } else if (map[y][x] === 4) {
                         ctx.fillStyle = turboPulse ? '#ff0' : '#ffa500';
                         ctx.beginPath();
-                        ctx.arc(x * gridSize + gridSize / 2, y * gridSize + gridSize / 2, 6, 0, Math.PI * 2);
+                        ctx.arc(x * gridSize + gridSize + gridSize / 2, y * gridSize + gridSize / 2, 6, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.fillStyle = '#000';
                         ctx.font = '12px Arial';
@@ -345,11 +359,6 @@
             ctx.fill();
 
             ghosts.forEach(ghost => drawGhost(ghost));
-
-            ctx.fillStyle = '#fff';
-            ctx.font = '20px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText(`Score: ${score}`, 10, 25);
         }
 
         function resetGame() {
@@ -359,6 +368,7 @@
                 { x: 18, y: 13, dx: -1, dy: 0, vulnerable: false }
             ];
             score = 0;
+            updateScore();
             map[3][9] = 3;
             map[11][9] = 3;
             map[7][9] = 4;
