@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fibre Channel Man</title>
     <style>
         canvas {
@@ -10,28 +11,28 @@
             display: block;
             width: 480px;
             height: 360px;
+            touch-action: none;
         }
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             padding: 0;
             background-color: #000;
             font-family: Arial, sans-serif;
-            overflow: hidden;
         }
         h1 {
             color: #fff;
-            margin: 0 0 10px 0;
+            margin: 10px 0;
             padding: 0;
         }
         #instructions {
             color: #fff;
             text-align: center;
             max-width: 480px;
-            margin: 0 0 10px 0;
+            margin: 10px 0;
             padding: 0;
         }
         #gameContainer {
@@ -39,22 +40,21 @@
             flex-direction: column;
             align-items: center;
             background-color: #000;
-            padding: 0;
-            margin: 0;
-            height: auto;
+            padding: 10px;
+            box-sizing: border-box;
         }
         #scoreDisplay {
             color: #fff;
             font-family: Arial, sans-serif;
             font-size: 20px;
-            margin-top: 10px;
+            margin: 10px 0;
             text-align: center;
         }
         #highScoreTable {
             color: #fff;
             font-family: Arial, sans-serif;
             font-size: 16px;
-            margin-top: 10px;
+            margin: 10px 0;
             text-align: center;
             width: 480px;
         }
@@ -66,15 +66,71 @@
             padding: 5px;
             border: 1px solid #fff;
         }
+        #controls {
+            margin: 5px 0; /* Reduced margin to bring closer to canvas */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px; /* Reduced gap for tighter layout */
+        }
+        .control-row {
+            display: flex;
+            gap: 5px; /* Reduced gap between buttons */
+        }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            color: #fff;
+            border: 2px solid #00f;
+            border-radius: 10px;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .control-btn:active {
+            background-color: #555;
+        }
+        @media (max-height: 800px) {
+            canvas {
+                width: 360px;
+                height: 270px;
+            }
+            #highScoreTable {
+                width: 360px;
+            }
+            #instructions {
+                max-width: 360px;
+            }
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <h1>Fibre Channel Man</h1>
         <div id="instructions">
-            Use arrow keys to move Fibre Channel Man. Collect Data Packets (10 pts), Zoning Configs (50 pts), and Brocade Turbo Ports (power-up). Avoid Latency Ghosts unless turbo is active—then chase them for 200 pts each!
+            Use arrow keys (desktop) or buttons (mobile) to move Fibre Channel Man. Collect Data Packets (10 pts), Zoning Configs (50 pts), and Brocade Turbo Ports (power-up). Avoid Latency Ghosts unless turbo is active—then chase them for 200 pts each!
         </div>
         <canvas id="gameCanvas" width="480" height="360"></canvas>
+        <div id="controls">
+            <div class="control-row">
+                <button class="control-btn" id="upBtn">↑</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" id="leftBtn">←</button>
+                <button class="control-btn" id="rightBtn">→</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" id="downBtn">↓</button>
+            </div>
+        </div>
         <div id="scoreDisplay">Score: 0</div>
         <div id="highScoreTable">
             <h2>High Scores</h2>
@@ -182,15 +238,15 @@
             let highScores = loadHighScores();
             const name = prompt("Game Over! Enter your name for the high score:", "Player") || "Anonymous";
             highScores.push({ name, score: newScore });
-            highScores.sort((a, b) => b.score - a.score); // Sort descending
-            highScores = highScores.slice(0, MAX_HIGH_SCORES); // Keep top 5
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, MAX_HIGH_SCORES);
             saveHighScores(highScores);
             displayHighScores();
         }
 
         function displayHighScores() {
             const highScores = loadHighScores();
-            highScoreList.innerHTML = ''; // Clear table
+            highScoreList.innerHTML = '';
             highScores.forEach((entry, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -202,12 +258,42 @@
             });
         }
 
-        // Handle keyboard input
+        // Handle keyboard input (desktop) with scroll prevention
         document.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault(); // Prevent scrolling
+            }
             if (e.key === 'ArrowUp') { fibreMan.dx = 0; fibreMan.dy = -1; }
             if (e.key === 'ArrowDown') { fibreMan.dx = 0; fibreMan.dy = 1; }
             if (e.key === 'ArrowLeft') { fibreMan.dx = -1; fibreMan.dy = 0; }
             if (e.key === 'ArrowRight') { fibreMan.dx = 1; fibreMan.dy = 0; }
+        });
+
+        // Handle mobile controls
+        const upBtn = document.getElementById('upBtn');
+        const downBtn = document.getElementById('downBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+
+        function setDirection(dx, dy) {
+            fibreMan.dx = dx;
+            fibreMan.dy = dy;
+        }
+
+        upBtn.addEventListener('touchstart', () => setDirection(0, -1));
+        downBtn.addEventListener('touchstart', () => setDirection(0, 1));
+        leftBtn.addEventListener('touchstart', () => setDirection(-1, 0));
+        rightBtn.addEventListener('touchstart', () => setDirection(1, 0));
+
+        upBtn.addEventListener('mousedown', () => setDirection(0, -1));
+        downBtn.addEventListener('mousedown', () => setDirection(0, 1));
+        leftBtn.addEventListener('mousedown', () => setDirection(-1, 0));
+        rightBtn.addEventListener('mousedown', () => setDirection(1, 0));
+
+        [upBtn, downBtn, leftBtn, rightBtn].forEach(btn => {
+            btn.addEventListener('touchend', () => setDirection(0, 0));
+            btn.addEventListener('mouseup', () => setDirection(0, 0));
+            btn.addEventListener('touchcancel', () => setDirection(0, 0));
         });
 
         // Function to draw a ghost
@@ -363,7 +449,7 @@
                         } else {
                             gameOverSound.currentTime = 0;
                             gameOverSound.play().catch(e => console.log("Audio play failed:", e));
-                            updateHighScores(score); // Update high scores on game over
+                            updateHighScores(score);
                             alert(`Game Over! Latency caught you. Score: ${score}`);
                             resetGame();
                         }
