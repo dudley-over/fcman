@@ -5,43 +5,43 @@
     <title>Fibre Channel Man</title>
     <style>
         canvas {
-            border: 2px solid #00f; /* SAN fabric blue */
-            background-color: #222; /* Dark SAN console vibe */
-            display: block; /* Prevent extra space */
-            width: 480px; /* 20 tiles x 24px */
-            height: 360px; /* 15 tiles x 24px */
+            border: 2px solid #00f;
+            background-color: #222;
+            display: block;
+            width: 480px;
+            height: 360px;
         }
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh; /* Full viewport height */
+            height: 100vh;
             margin: 0;
             padding: 0;
             background-color: #000;
             font-family: Arial, sans-serif;
-            overflow: hidden; /* Prevent scrolling */
+            overflow: hidden;
         }
         h1 {
             color: #fff;
-            margin: 0 0 10px 0; /* Tight spacing */
+            margin: 0 0 10px 0;
             padding: 0;
         }
         #instructions {
             color: #fff;
             text-align: center;
             max-width: 480px;
-            margin: 0 0 10px 0; /* Tight spacing */
+            margin: 0 0 10px 0;
             padding: 0;
         }
         #gameContainer {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #000; /* Match body */
+            background-color: #000;
             padding: 0;
             margin: 0;
-            height: auto; /* Fit content */
+            height: auto;
         }
     </style>
 </head>
@@ -51,7 +51,7 @@
         <div id="instructions">
             Use arrow keys to move Fibre Channel Man. Collect Data Packets (10 pts), Zoning Configs (50 pts), and Brocade Turbo Ports (power-up). Avoid Latency Ghosts unless turbo is active—then chase them for 200 pts each!
         </div>
-        <canvas id="gameCanvas" width="480" height="360"></canvas> <!-- Adjusted height -->
+        <canvas id="gameCanvas" width="480" height="360"></canvas>
     </div>
 
     <script>
@@ -60,11 +60,10 @@
 
         // Sound effects
         const wakaSound = new Audio('http://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3');
-        const powerUpSound = new Audio('powerup.mp3'); // Replace with your file path
-        const ghostEatenSound = new Audio('ghosteaten.mp3'); // Replace with your file path
-        const gameOverSound = new Audio('gameover.mp3'); // Replace with your file path
+        const powerUpSound = new Audio('powerup.mp3');
+        const ghostEatenSound = new Audio('ghosteaten.mp3');
+        const gameOverSound = new Audio('gameover.mp3');
 
-        // Function to play sound for a limited duration
         function playSoundForDuration(audio, durationMs) {
             audio.currentTime = 0;
             audio.play().catch(e => console.log("Audio play failed:", e));
@@ -76,14 +75,13 @@
 
         // Game settings
         const gridSize = 24;
-        const tileCountX = 20; // Map width (0-19)
-        const tileCountY = 15; // Map height (0-14)
+        const tileCountX = 20;
+        const tileCountY = 15;
         const playerSpeed = 200;
         const ghostSpeed = 250;
         const turboSpeed = 100;
         const vulnerableGhostSpeed = 400;
 
-        // Animation for Turbo Ports (pulse effect)
         let turboPulse = 0;
         let lastPulseTime = 0;
 
@@ -99,7 +97,7 @@
             mouthOpen: true
         };
 
-        // Latency Ghosts (exactly 2, starting within bounds)
+        // Latency Ghosts
         let ghosts = [
             { x: 18, y: 1, dx: -1, dy: 0, vulnerable: false },
             { x: 18, y: 13, dx: -1, dy: 0, vulnerable: false }
@@ -136,18 +134,69 @@
             if (e.key === 'ArrowRight') { fibreMan.dx = 1; fibreMan.dy = 0; }
         });
 
+        // Function to draw a ghost
+        function drawGhost(ghost) {
+            const x = ghost.x * gridSize;
+            const y = ghost.y * gridSize;
+            const size = gridSize - 2;
+            const color = ghost.vulnerable ? '#00f' : '#f00';
+
+            // Ghost body
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x + size / 2, y + size / 4, size / 2, Math.PI, 0, false); // Top semi-circle
+            ctx.lineTo(x + size, y + size); // Right side down
+            ctx.lineTo(x, y + size); // Left side down
+            ctx.closePath();
+            ctx.fill();
+
+            // Wavy bottom
+            ctx.beginPath();
+            ctx.moveTo(x, y + size);
+            for (let i = 0; i < 4; i++) {
+                ctx.quadraticCurveTo(
+                    x + (i * size / 3) + size / 6,
+                    y + size + (i % 2 === 0 ? 4 : -4),
+                    x + (i + 1) * size / 3,
+                    y + size
+                );
+            }
+            ctx.lineTo(x + size, y + size);
+            ctx.closePath();
+            ctx.fill();
+
+            // Eyes
+            const eyeOffsetX = size / 4;
+            const eyeOffsetY = size / 4;
+            const eyeSize = size / 6;
+
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x + size / 2 - eyeOffsetX, y + eyeOffsetY, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + size / 2 + eyeOffsetX, y + eyeOffsetY, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x + size / 2 - eyeOffsetX, y + eyeOffsetY, eyeSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + size / 2 + eyeOffsetX, y + eyeOffsetY, eyeSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         // Game loop
         function update(timestamp) {
             if (!lastUpdateTime) lastUpdateTime = timestamp;
             if (!lastGhostUpdateTime) lastGhostUpdateTime = timestamp;
 
-            // Update Turbo Port pulse animation (every 500ms)
             if (timestamp - lastPulseTime > 500) {
                 turboPulse = (turboPulse + 1) % 2;
                 lastPulseTime = timestamp;
             }
 
-            // Move Fibre Channel Man
             let currentPlayerSpeed = fibreMan.turbo ? turboSpeed : playerSpeed;
             if (timestamp - lastUpdateTime > currentPlayerSpeed) {
                 let newX = fibreMan.x + fibreMan.dx;
@@ -176,15 +225,13 @@
                 lastUpdateTime = timestamp;
             }
 
-            // Turbo timer
             if (fibreMan.turbo && timestamp - fibreMan.turboTimer > 5000) {
                 fibreMan.turbo = false;
                 ghosts.forEach(ghost => ghost.vulnerable = false);
             }
 
-            // Move Ghosts
             if (timestamp - lastGhostUpdateTime > (ghosts[0].vulnerable ? vulnerableGhostSpeed : ghostSpeed)) {
-                ghosts.forEach((ghost, index) => {
+                ghosts.forEach((ghost) => {
                     let dx = fibreMan.x - ghost.x;
                     let dy = fibreMan.y - ghost.y;
                     let possibleMoves = [
@@ -225,7 +272,6 @@
                         }
                     }
 
-                    // Check collision
                     if (ghost.x === fibreMan.x && ghost.y === fibreMan.y) {
                         if (ghost.vulnerable) {
                             ghost.x = 18;
@@ -248,11 +294,9 @@
             requestAnimationFrame(update);
         }
 
-        // Draw everything
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw SAN Fabric Map
             for (let y = 0; y < map.length; y++) {
                 for (let x = 0; x < map[y].length; x++) {
                     if (map[y][x] === 1) {
@@ -263,8 +307,8 @@
                         ctx.beginPath();
                         ctx.arc(x * gridSize + gridSize / 2, y * gridSize + gridSize / 2, 3, 0, Math.PI * 2);
                         ctx.fill();
-                    } else if (map[y][x] === 3) { // Zoning Configs
-                        ctx.fillStyle = '#0f0'; // Green
+                    } else if (map[y][x] === 3) {
+                        ctx.fillStyle = '#0f0';
                         ctx.beginPath();
                         ctx.moveTo(x * gridSize + gridSize / 2, y * gridSize + 4);
                         ctx.lineTo(x * gridSize + gridSize - 4, y * gridSize + gridSize / 2);
@@ -276,8 +320,8 @@
                         ctx.font = '12px Arial';
                         ctx.textAlign = 'center';
                         ctx.fillText('Z', x * gridSize + gridSize / 2, y * gridSize + gridSize / 2 + 4);
-                    } else if (map[y][x] === 4) { // Turbo Ports
-                        ctx.fillStyle = turboPulse ? '#ff0' : '#ffa500'; // Pulse yellow/orange
+                    } else if (map[y][x] === 4) {
+                        ctx.fillStyle = turboPulse ? '#ff0' : '#ffa500';
                         ctx.beginPath();
                         ctx.arc(x * gridSize + gridSize / 2, y * gridSize + gridSize / 2, 6, 0, Math.PI * 2);
                         ctx.fill();
@@ -289,7 +333,6 @@
                 }
             }
 
-            // Draw Fibre Channel Man
             ctx.fillStyle = fibreMan.turbo ? '#0ff' : '#ff0';
             ctx.beginPath();
             let startAngle, endAngle;
@@ -301,20 +344,14 @@
             ctx.lineTo(fibreMan.x * gridSize + gridSize / 2, fibreMan.y * gridSize + gridSize / 2);
             ctx.fill();
 
-            // Draw Latency Ghosts (exactly 2)
-            ghosts.forEach(ghost => {
-                ctx.fillStyle = ghost.vulnerable ? '#00f' : '#f00';
-                ctx.fillRect(ghost.x * gridSize, ghost.y * gridSize, gridSize - 2, gridSize - 2);
-            });
+            ghosts.forEach(ghost => drawGhost(ghost));
 
-            // Draw Score (adjusted position for safety)
             ctx.fillStyle = '#fff';
             ctx.font = '20px Arial';
-            ctx.textAlign = 'left'; // Ensure alignment is explicit
-            ctx.fillText(`Score: ${score}`, 10, 25); // Moved down slightly to 25px
+            ctx.textAlign = 'left';
+            ctx.fillText(`Score: ${score}`, 10, 25);
         }
 
-        // Reset game
         function resetGame() {
             fibreMan = { x: 1, y: 1, dx: 0, dy: 0, turbo: false, turboTimer: 0, mouthAngle: 0, mouthOpen: true };
             ghosts = [
@@ -332,7 +369,6 @@
             }
         }
 
-        // Start the game
         requestAnimationFrame(update);
     </script>
 </body>
