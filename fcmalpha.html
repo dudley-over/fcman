@@ -67,15 +67,15 @@
             border: 1px solid #fff;
         }
         #controls {
-            margin: 5px 0; /* Reduced margin to bring closer to canvas */
+            margin: 5px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px; /* Reduced gap for tighter layout */
+            gap: 5px;
         }
         .control-row {
             display: flex;
-            gap: 5px; /* Reduced gap between buttons */
+            gap: 5px;
         }
         .control-btn {
             width: 60px;
@@ -116,7 +116,7 @@
     <div id="gameContainer">
         <h1>Fibre Channel Man</h1>
         <div id="instructions">
-            Use arrow keys (desktop) or buttons (mobile) to move Fibre Channel Man. Collect Data Packets (10 pts), Zoning Configs (50 pts), and Brocade Turbo Ports (power-up). Avoid Latency Ghosts unless turbo is active—then chase them for 200 pts each!
+            Use arrow keys (desktop) or tap buttons (mobile) to move Fibre Channel Man. Tap again or another direction to stop/change. Collect Data Packets (10 pts), Zoning Configs (50 pts), and Brocade Turbo Ports (power-up). Avoid Latency Ghosts unless turbo is active—then chase them for 200 pts each!
         </div>
         <canvas id="gameCanvas" width="480" height="360"></canvas>
         <div id="controls">
@@ -261,7 +261,7 @@
         // Handle keyboard input (desktop) with scroll prevention
         document.addEventListener('keydown', (e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.preventDefault(); // Prevent scrolling
+                e.preventDefault();
             }
             if (e.key === 'ArrowUp') { fibreMan.dx = 0; fibreMan.dy = -1; }
             if (e.key === 'ArrowDown') { fibreMan.dx = 0; fibreMan.dy = 1; }
@@ -269,32 +269,32 @@
             if (e.key === 'ArrowRight') { fibreMan.dx = 1; fibreMan.dy = 0; }
         });
 
-        // Handle mobile controls
+        // Handle mobile controls (persistent movement on tap)
         const upBtn = document.getElementById('upBtn');
         const downBtn = document.getElementById('downBtn');
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
 
         function setDirection(dx, dy) {
-            fibreMan.dx = dx;
-            fibreMan.dy = dy;
+            // If tapping the same direction and moving, stop; otherwise, set new direction
+            if (fibreMan.dx === dx && fibreMan.dy === dy) {
+                fibreMan.dx = 0;
+                fibreMan.dy = 0;
+            } else {
+                fibreMan.dx = dx;
+                fibreMan.dy = dy;
+            }
         }
 
-        upBtn.addEventListener('touchstart', () => setDirection(0, -1));
-        downBtn.addEventListener('touchstart', () => setDirection(0, 1));
-        leftBtn.addEventListener('touchstart', () => setDirection(-1, 0));
-        rightBtn.addEventListener('touchstart', () => setDirection(1, 0));
+        upBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setDirection(0, -1); });
+        downBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setDirection(0, 1); });
+        leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setDirection(-1, 0); });
+        rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setDirection(1, 0); });
 
-        upBtn.addEventListener('mousedown', () => setDirection(0, -1));
-        downBtn.addEventListener('mousedown', () => setDirection(0, 1));
-        leftBtn.addEventListener('mousedown', () => setDirection(-1, 0));
-        rightBtn.addEventListener('mousedown', () => setDirection(1, 0));
-
-        [upBtn, downBtn, leftBtn, rightBtn].forEach(btn => {
-            btn.addEventListener('touchend', () => setDirection(0, 0));
-            btn.addEventListener('mouseup', () => setDirection(0, 0));
-            btn.addEventListener('touchcancel', () => setDirection(0, 0));
-        });
+        upBtn.addEventListener('mousedown', (e) => { e.preventDefault(); setDirection(0, -1); });
+        downBtn.addEventListener('mousedown', (e) => { e.preventDefault(); setDirection(0, 1); });
+        leftBtn.addEventListener('mousedown', (e) => { e.preventDefault(); setDirection(-1, 0); });
+        rightBtn.addEventListener('mousedown', (e) => { e.preventDefault(); setDirection(1, 0); });
 
         // Function to draw a ghost
         function drawGhost(ghost) {
@@ -387,6 +387,10 @@
                         powerUpSound.currentTime = 0;
                         powerUpSound.play().catch(e => console.log("Audio play failed:", e));
                     }
+                } else {
+                    // Stop if hitting a wall
+                    fibreMan.dx = 0;
+                    fibreMan.dy = 0;
                 }
                 lastUpdateTime = timestamp;
             }
