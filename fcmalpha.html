@@ -68,14 +68,12 @@
         }
         #controls {
             margin: 5px 0;
+            position: relative;
+            width: 180px; /* 60px btn + 60px gap + 60px btn */
+            height: 180px; /* 60px btn + 60px gap + 60px btn */
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 5px;
-        }
-        .control-row {
-            display: flex;
-            gap: 5px;
         }
         .control-btn {
             width: 60px;
@@ -89,9 +87,30 @@
             cursor: pointer;
             touch-action: manipulation;
             user-select: none;
+            position: absolute;
         }
         .control-btn:active {
             background-color: #555;
+        }
+        #upBtn {
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #downBtn {
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #leftBtn {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        #rightBtn {
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
         }
         @media (max-height: 800px) {
             canvas {
@@ -103,6 +122,10 @@
             }
             #instructions {
                 max-width: 360px;
+            }
+            #controls {
+                width: 150px; /* 50px btn + 50px gap + 50px btn */
+                height: 150px;
             }
             .control-btn {
                 width: 50px;
@@ -120,16 +143,10 @@
         </div>
         <canvas id="gameCanvas" width="480" height="360"></canvas>
         <div id="controls">
-            <div class="control-row">
-                <button class="control-btn" id="upBtn">↑</button>
-            </div>
-            <div class="control-row">
-                <button class="control-btn" id="leftBtn">←</button>
-                <button class="control-btn" id="rightBtn">→</button>
-            </div>
-            <div class="control-row">
-                <button class="control-btn" id="downBtn">↓</button>
-            </div>
+            <button class="control-btn" id="upBtn">↑</button>
+            <button class="control-btn" id="leftBtn">←</button>
+            <button class="control-btn" id="rightBtn">→</button>
+            <button class="control-btn" id="downBtn">↓</button>
         </div>
         <div id="scoreDisplay">Score: 0</div>
         <div id="highScoreTable">
@@ -276,7 +293,6 @@
         const rightBtn = document.getElementById('rightBtn');
 
         function setDirection(dx, dy) {
-            // If tapping the same direction and moving, stop; otherwise, set new direction
             if (fibreMan.dx === dx && fibreMan.dy === dy) {
                 fibreMan.dx = 0;
                 fibreMan.dy = 0;
@@ -388,7 +404,6 @@
                         powerUpSound.play().catch(e => console.log("Audio play failed:", e));
                     }
                 } else {
-                    // Stop if hitting a wall
                     fibreMan.dx = 0;
                     fibreMan.dy = 0;
                 }
