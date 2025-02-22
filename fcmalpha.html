@@ -47,8 +47,24 @@
             color: #fff;
             font-family: Arial, sans-serif;
             font-size: 20px;
-            margin-top: 10px; /* Space between canvas and score */
+            margin-top: 10px;
             text-align: center;
+        }
+        #highScoreTable {
+            color: #fff;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            margin-top: 10px;
+            text-align: center;
+            width: 480px;
+        }
+        #highScoreTable table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #highScoreTable th, #highScoreTable td {
+            padding: 5px;
+            border: 1px solid #fff;
         }
     </style>
 </head>
@@ -59,13 +75,27 @@
             Use arrow keys to move Fibre Channel Man. Collect Data Packets (10 pts), Zoning Configs (50 pts), and Brocade Turbo Ports (power-up). Avoid Latency Ghosts unless turbo is active—then chase them for 200 pts each!
         </div>
         <canvas id="gameCanvas" width="480" height="360"></canvas>
-        <div id="scoreDisplay">Score: 0</div> <!-- New score element -->
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="highScoreTable">
+            <h2>High Scores</h2>
+            <table id="highScoreList">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreList = document.getElementById('highScoreList').getElementsByTagName('tbody')[0];
 
         // Sound effects
         const wakaSound = new Audio('http://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3');
@@ -112,7 +142,7 @@
             { x: 18, y: 13, dx: -1, dy: 0, vulnerable: false }
         ];
 
-        // SAN Fabric Map (1 = wall, 0 = path, 2 = data packet, 3 = zoning config, 4 = turbo port)
+        // SAN Fabric Map
         const map = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,0,1],
@@ -134,6 +164,43 @@
         let score = 0;
         let lastUpdateTime = 0;
         let lastGhostUpdateTime = 0;
+
+        // High score management
+        const HIGH_SCORE_KEY = 'fibreChannelManHighScores';
+        const MAX_HIGH_SCORES = 5;
+
+        function loadHighScores() {
+            const saved = localStorage.getItem(HIGH_SCORE_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        function saveHighScores(scores) {
+            localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(scores));
+        }
+
+        function updateHighScores(newScore) {
+            let highScores = loadHighScores();
+            const name = prompt("Game Over! Enter your name for the high score:", "Player") || "Anonymous";
+            highScores.push({ name, score: newScore });
+            highScores.sort((a, b) => b.score - a.score); // Sort descending
+            highScores = highScores.slice(0, MAX_HIGH_SCORES); // Keep top 5
+            saveHighScores(highScores);
+            displayHighScores();
+        }
+
+        function displayHighScores() {
+            const highScores = loadHighScores();
+            highScoreList.innerHTML = ''; // Clear table
+            highScores.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.name}</td>
+                    <td>${entry.score}</td>
+                `;
+                highScoreList.appendChild(row);
+            });
+        }
 
         // Handle keyboard input
         document.addEventListener('keydown', (e) => {
@@ -296,6 +363,7 @@
                         } else {
                             gameOverSound.currentTime = 0;
                             gameOverSound.play().catch(e => console.log("Audio play failed:", e));
+                            updateHighScores(score); // Update high scores on game over
                             alert(`Game Over! Latency caught you. Score: ${score}`);
                             resetGame();
                         }
@@ -337,7 +405,7 @@
                     } else if (map[y][x] === 4) {
                         ctx.fillStyle = turboPulse ? '#ff0' : '#ffa500';
                         ctx.beginPath();
-                        ctx.arc(x * gridSize + gridSize + gridSize / 2, y * gridSize + gridSize / 2, 6, 0, Math.PI * 2);
+                        ctx.arc(x * gridSize + gridSize / 2, y * gridSize + gridSize / 2, 6, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.fillStyle = '#000';
                         ctx.font = '12px Arial';
@@ -379,6 +447,8 @@
             }
         }
 
+        // Initialize high scores on load
+        displayHighScores();
         requestAnimationFrame(update);
     </script>
 </body>
